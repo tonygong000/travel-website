@@ -83,6 +83,10 @@ function renderTimeline() {
       </header>
       <p>${trip.mood || '这一段旅程等待你补充故事。'}</p>
       <p class="subtle">POI: ${(trip.poi || []).join(' / ')}</p>
+      <div class="timeline-actions">
+        <button class="ghost-btn" data-action="edit-trip" data-id="${trip.id}">修改旅程数据</button>
+        <button class="ghost-btn" data-action="upload" data-id="${trip.id}">${trip.mood ? '编辑游记' : '上传游记'}</button>
+      </div>
     `;
     container.appendChild(card);
   });
@@ -470,19 +474,26 @@ function setupRecordForm() {
     }
   }
 
-  function openModal(journeyToEdit) {
+  function openModal(journeyToEdit, options = {}) {
     form.reset();
     editingJourneyId = journeyToEdit?.id || '';
+    const variant = options.variant || (journeyToEdit ? 'story' : 'full');
     form.dataset.mode = journeyToEdit ? 'edit' : 'create';
-    form.dataset.variant = journeyToEdit ? 'story' : 'full';
+    form.dataset.variant = variant;
     const idInput = form.elements.id;
     if (journeyToEdit) {
       fillFormFromJourney(journeyToEdit);
       if (idInput) idInput.readOnly = true;
-      setFormVariant('story');
-      headerEyebrow.textContent = '更新游记';
-      headerTitle.textContent = '上传 / 编辑游记内容';
-      submitBtn.textContent = '保存游记内容';
+      setFormVariant(variant);
+      if (variant === 'story') {
+        headerEyebrow.textContent = '更新游记';
+        headerTitle.textContent = '上传 / 编辑游记内容';
+        submitBtn.textContent = '保存游记内容';
+      } else {
+        headerEyebrow.textContent = '修改旅程';
+        headerTitle.textContent = '更新旅程数据表';
+        submitBtn.textContent = '保存旅程数据';
+      }
     } else {
       setFormVariant('full');
       if (idInput) {
@@ -505,13 +516,18 @@ function setupRecordForm() {
   document.addEventListener('click', (event) => {
     const recordTrigger = event.target.closest('[data-action="record"]');
     const uploadTrigger = event.target.closest('[data-action="upload"]');
+    const editTrigger = event.target.closest('[data-action="edit-trip"]');
 
     if (recordTrigger) {
       openModal();
     } else if (uploadTrigger) {
       const targetId = uploadTrigger.dataset.id;
       const targetJourney = journeys.find((trip) => trip.id === targetId);
-      openModal(targetJourney);
+      openModal(targetJourney, { variant: 'story' });
+    } else if (editTrigger) {
+      const targetId = editTrigger.dataset.id;
+      const targetJourney = journeys.find((trip) => trip.id === targetId);
+      openModal(targetJourney, { variant: 'full' });
     }
   });
 

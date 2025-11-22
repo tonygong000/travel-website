@@ -340,6 +340,17 @@ main {
   justify-content: space-between;
 }
 
+.timeline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timeline-actions .ghost-btn {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
 .badge {
   padding: 4px 8px;
   border-radius: 10px;
