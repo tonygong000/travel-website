@@ -173,8 +173,8 @@
     <div class="modal-content">
       <header class="modal-header">
         <div>
-          <p class="eyebrow">新旅程</p>
-          <h3>填写旅程数据表</h3>
+          <p class="eyebrow" id="modal-eyebrow">新旅程</p>
+          <h3 id="modal-title">填写旅程数据表</h3>
           <p class="small">填写必要信息，点击完成后即刻写入数据库并刷新页面数据。</p>
         </div>
         <button class="ghost-btn" id="close-modal" aria-label="关闭">关闭</button>
@@ -205,7 +205,7 @@
         <label>心情/短评<textarea name="mood" rows="2" placeholder="这一刻的感受"></textarea></label>
         <div class="form-actions">
           <button type="button" class="ghost-btn" id="cancel-modal">取消</button>
-          <button type="submit" class="primary-btn">完成填写并写入</button>
+          <button type="submit" class="primary-btn" id="modal-submit">完成填写并写入</button>
         </div>
         <p class="small" id="form-feedback" role="alert"></p>
       </form>

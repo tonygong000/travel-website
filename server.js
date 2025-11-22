@@ -325,6 +325,75 @@ async function addJourney(payload) {
   return normalizeRow(inserted);
 }
 
+async function updateJourney(id, payload) {
+  const existingRow = await get(getDb(), 'SELECT * FROM journeys WHERE id = ?', [id]);
+  if (!existingRow) {
+    const error = new Error('Journey not found');
+    error.status = 404;
+    throw error;
+  }
+
+  const existing = normalizeRow(existingRow);
+
+  const journey = {
+    ...existing,
+    ...payload,
+    id,
+    poi: payload.poi || existing.poi || [],
+    gallery: payload.gallery || existing.gallery || [],
+    highlights: payload.highlights || existing.highlights || [],
+    companions: payload.companions || existing.companions || [],
+    theme: payload.theme || existing.theme || [],
+    transport: payload.transport || existing.transport || [],
+    revisit: payload.revisit !== undefined ? (payload.revisit ? 1 : 0) : existing.revisit
+  };
+
+  const required = ['id', 'title', 'location', 'country', 'continent', 'city', 'lat', 'lng', 'start', 'end'];
+  const missing = required.filter((field) => journey[field] === undefined || journey[field] === null || journey[field] === '');
+  if (missing.length) {
+    const error = new Error(`Missing required fields: ${missing.join(', ')}`);
+    error.status = 400;
+    throw error;
+  }
+
+  await run(
+    getDb(),
+    `UPDATE journeys
+     SET title = ?, location = ?, country = ?, continent = ?, city = ?, poi = ?, lat = ?, lng = ?, start = ?, end = ?, season = ?,
+         year = ?, heroImage = ?, gallery = ?, highlights = ?, companions = ?, theme = ?, transport = ?, rating = ?, revisit = ?,
+         distance = ?, mood = ?
+     WHERE id = ?`,
+    [
+      journey.title,
+      journey.location,
+      journey.country,
+      journey.continent,
+      journey.city,
+      JSON.stringify(journey.poi),
+      journey.lat,
+      journey.lng,
+      journey.start,
+      journey.end,
+      journey.season || '',
+      journey.year || new Date(journey.start).getFullYear(),
+      journey.heroImage || '',
+      JSON.stringify(journey.gallery),
+      JSON.stringify(journey.highlights),
+      JSON.stringify(journey.companions),
+      JSON.stringify(journey.theme),
+      JSON.stringify(journey.transport),
+      journey.rating || 0,
+      journey.revisit ? 1 : 0,
+      journey.distance || 0,
+      journey.mood || '',
+      id
+    ]
+  );
+
+  const [updated] = await all(getDb(), 'SELECT * FROM journeys WHERE id = ?', [id]);
+  return normalizeRow(updated);
+}
+
 async function startServer() {
   await initDb();
   const app = express();
@@ -351,6 +420,15 @@ async function startServer() {
     try {
       const saved = await addJourney(req.body);
       res.status(201).json({ journey: saved });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put('/api/journeys/:id', async (req, res, next) => {
+    try {
+      const saved = await updateJourney(req.params.id, req.body);
+      res.json({ journey: saved });
     } catch (error) {
       next(error);
     }

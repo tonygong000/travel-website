@@ -3,6 +3,7 @@ let heatmapData = [];
 let passportStamps = [];
 let tagFilters = ['全部'];
 let recordButtonsBound = false;
+let editingJourneyId = '';
 
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
@@ -132,6 +133,7 @@ function renderStories() {
       <h4>${trip.title}</h4>
       <p class="subtle">${trip.location} · ${trip.start} → ${trip.end}</p>
       <p>${trip.mood || '点击上传游记，填补这一段空白。'}</p>
+      <button class="ghost-btn" data-action="upload" data-id="${trip.id}">${trip.mood ? '编辑游记' : '上传游记'}</button>
     `;
     stories.appendChild(card);
   });
@@ -400,11 +402,64 @@ function setupRecordForm() {
   const feedback = document.getElementById('form-feedback');
   const closeBtn = document.getElementById('close-modal');
   const cancelBtn = document.getElementById('cancel-modal');
+  const headerTitle = document.getElementById('modal-title');
+  const headerEyebrow = document.getElementById('modal-eyebrow');
+  const submitBtn = document.getElementById('modal-submit');
 
-  function openModal() {
+  function fillFormFromJourney(trip) {
+    const setValue = (name, value) => {
+      const field = form.elements[name];
+      if (!field) return;
+      if (Array.isArray(value)) field.value = value.join(', ');
+      else if (value !== undefined && value !== null) field.value = typeof value === 'boolean' ? value.toString() : value;
+    };
+
+    setValue('title', trip.title);
+    setValue('id', trip.id);
+    setValue('country', trip.country);
+    setValue('continent', trip.continent);
+    setValue('city', trip.city);
+    setValue('location', trip.location);
+    setValue('lat', trip.lat);
+    setValue('lng', trip.lng);
+    setValue('start', trip.start);
+    setValue('end', trip.end);
+    setValue('season', trip.season);
+    setValue('year', trip.year);
+    setValue('heroImage', trip.heroImage);
+    setValue('poi', trip.poi);
+    setValue('gallery', trip.gallery);
+    setValue('highlights', trip.highlights);
+    setValue('companions', trip.companions);
+    setValue('theme', trip.theme);
+    setValue('transport', trip.transport);
+    setValue('rating', trip.rating);
+    setValue('revisit', trip.revisit);
+    setValue('distance', trip.distance);
+    setValue('mood', trip.mood);
+  }
+
+  function openModal(journeyToEdit) {
     form.reset();
+    editingJourneyId = journeyToEdit?.id || '';
+    form.dataset.mode = journeyToEdit ? 'edit' : 'create';
     const idInput = form.elements.id;
-    if (idInput) idInput.value = `trip-${Date.now()}`;
+    if (journeyToEdit) {
+      fillFormFromJourney(journeyToEdit);
+      if (idInput) idInput.readOnly = true;
+      headerEyebrow.textContent = '更新游记';
+      headerTitle.textContent = '上传 / 编辑游记内容';
+      submitBtn.textContent = '保存修改';
+    } else {
+      if (idInput) {
+        idInput.value = `trip-${Date.now()}`;
+        idInput.readOnly = false;
+      }
+      headerEyebrow.textContent = '新旅程';
+      headerTitle.textContent = '填写旅程数据表';
+      submitBtn.textContent = '完成填写并写入';
+    }
+
     feedback.textContent = '';
     modal.setAttribute('aria-hidden', 'false');
   }
@@ -413,8 +468,17 @@ function setupRecordForm() {
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  document.querySelectorAll('[data-action="record"]').forEach((btn) => {
-    btn.addEventListener('click', openModal);
+  document.addEventListener('click', (event) => {
+    const recordTrigger = event.target.closest('[data-action="record"]');
+    const uploadTrigger = event.target.closest('[data-action="upload"]');
+
+    if (recordTrigger) {
+      openModal();
+    } else if (uploadTrigger) {
+      const targetId = uploadTrigger.dataset.id;
+      const targetJourney = journeys.find((trip) => trip.id === targetId);
+      openModal(targetJourney);
+    }
   });
 
   closeBtn?.addEventListener('click', closeModal);
@@ -429,7 +493,7 @@ function setupRecordForm() {
     try {
       const formData = new FormData(form);
       const payload = {
-        id: formData.get('id').trim(),
+        id: (formData.get('id') || '').toString().trim(),
         title: formData.get('title').trim(),
         location: formData.get('location').trim(),
         country: formData.get('country').trim(),
@@ -454,8 +518,13 @@ function setupRecordForm() {
         mood: formData.get('mood') || ''
       };
 
-      const response = await fetch('/api/journeys', {
-        method: 'POST',
+      const mode = form.dataset.mode || 'create';
+      const targetId = mode === 'edit' ? editingJourneyId || payload.id : payload.id;
+      const endpoint = mode === 'edit' ? `/api/journeys/${encodeURIComponent(targetId)}` : '/api/journeys';
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -469,7 +538,7 @@ function setupRecordForm() {
       const saved = result.journey;
       journeys = [saved, ...journeys.filter((j) => j.id !== saved.id)];
       renderAll();
-      feedback.textContent = '写入成功，已刷新最新数据。';
+      feedback.textContent = mode === 'edit' ? '已更新游记内容。' : '写入成功，已刷新最新数据。';
       setTimeout(() => closeModal(), 600);
     } catch (error) {
       console.error(error);

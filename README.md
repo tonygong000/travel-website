@@ -18,9 +18,9 @@
    npm start
    ```
    浏览器访问 `http://localhost:3000`，页面将通过 `/api/journeys` 动态读取数据库中的旅程数据。
-4. 新增旅程（可选）：
-   - 前端：点击右上角或底部的「开始记录」按钮，填写弹出的数据表，提交后会直接写入数据库并刷新界面。
-   - API：也可向 `http://localhost:3000/api/journeys` 发送 `POST` 请求，JSON 结构参考示例字段（必填：`id`、`title`、`location`、`country`、`continent`、`city`、`lat`、`lng`、`start`、`end`）。
+4. 新增或更新旅程（可选）：
+   - 前端：点击右上角或底部的「开始记录」按钮新增；若要修改已有游记，可在「故事卡」里点「上传/编辑游记」按钮，会预填原始数据并写回数据库。
+   - API：向 `http://localhost:3000/api/journeys` 发送 `POST` 可新增；向 `/api/journeys/:id` 发送 `PUT` 可更新对应旅程。JSON 结构参考示例字段（必填：`id`、`title`、`location`、`country`、`continent`、`city`、`lat`、`lng`、`start`、`end`）。
 
 > 如果仍想查看静态版本，可用 Python/Node 静态服务器直接打开，但因为缺少 API 会显示“无法加载旅程数据”。
 
@@ -33,5 +33,5 @@
 
 ## 自定义数据
 - 默认示例数据会在数据库为空时自动写入（运行 `npm run seed` 或首次 `npm start`）。
-- 你可以通过 `POST /api/journeys` 写入新的旅程记录，或直接用 SQLite GUI/CLI 修改 `data.db`。
+- 你可以通过 `POST /api/journeys` 写入新的旅程记录，或用 `PUT /api/journeys/:id` 更新既有记录，也可直接用 SQLite GUI/CLI 修改 `data.db`。
 - 前端页面会实时从 `/api/journeys` 拉取数据，无需改动 `script.js`。
