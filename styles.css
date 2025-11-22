@@ -670,6 +670,18 @@ main {
   color: rgba(255, 255, 255, 0.7);
 }
 
+.form-grid.story-only .journey-field {
+  display: none;
+}
+
+.form-grid.story-only .story-field {
+  grid-column: 1 / -1;
+}
+
+.form-grid.story-only textarea {
+  min-height: 160px;
+}
+
 .form-grid input,
 .form-grid textarea,
 .form-grid select {

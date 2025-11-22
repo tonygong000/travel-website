@@ -180,29 +180,29 @@
         <button class="ghost-btn" id="close-modal" aria-label="关闭">关闭</button>
       </header>
       <form id="journey-form" class="form-grid">
-        <label>标题*<input name="title" required placeholder="如：巴黎秋日 Citywalk" /></label>
-        <label>唯一 ID*<input name="id" required placeholder="例如 paris2025" /></label>
-        <label>国家*<input name="country" required placeholder="法国" /></label>
-        <label>洲*<input name="continent" required placeholder="欧洲" /></label>
-        <label>城市*<input name="city" required placeholder="巴黎" /></label>
-        <label>详细位置*<input name="location" required placeholder="巴黎, 法国" /></label>
-        <label>纬度*<input name="lat" required type="number" step="0.0001" placeholder="48.8566" /></label>
-        <label>经度*<input name="lng" required type="number" step="0.0001" placeholder="2.3522" /></label>
-        <label>开始日期*<input name="start" required type="date" /></label>
-        <label>结束日期*<input name="end" required type="date" /></label>
-        <label>季节<input name="season" placeholder="秋季" /></label>
-        <label>年份<input name="year" type="number" placeholder="2024" /></label>
-        <label>封面图<input name="heroImage" placeholder="https://..." /></label>
-        <label>POI（逗号分隔）<input name="poi" placeholder="埃菲尔铁塔, 卢浮宫" /></label>
-        <label>图集（逗号分隔 URL）<textarea name="gallery" rows="2" placeholder="多张图片用逗号分隔"></textarea></label>
-        <label>高光时刻（逗号分隔）<textarea name="highlights" rows="2" placeholder="最难忘的三件事"></textarea></label>
-        <label>同伴标签（逗号分隔）<input name="companions" placeholder="情侣, 朋友" /></label>
-        <label>主题标签（逗号分隔）<input name="theme" placeholder="Citywalk, 美食" /></label>
-        <label>交通方式（逗号分隔）<input name="transport" placeholder="飞机, 自驾" /></label>
-        <label>推荐指数（1-5）<input name="rating" type="number" min="1" max="5" placeholder="5" /></label>
-        <label>是否二刷<select name="revisit"><option value="false">否</option><option value="true">是</option></select></label>
-        <label>累计里程 (km)<input name="distance" type="number" min="0" placeholder="1000" /></label>
-        <label>心情/短评<textarea name="mood" rows="2" placeholder="这一刻的感受"></textarea></label>
+        <label class="journey-field">标题*<input name="title" required placeholder="如：巴黎秋日 Citywalk" /></label>
+        <label class="journey-field">唯一 ID*<input name="id" required placeholder="例如 paris2025" /></label>
+        <label class="journey-field">国家*<input name="country" required placeholder="法国" /></label>
+        <label class="journey-field">洲*<input name="continent" required placeholder="欧洲" /></label>
+        <label class="journey-field">城市*<input name="city" required placeholder="巴黎" /></label>
+        <label class="journey-field">详细位置*<input name="location" required placeholder="巴黎, 法国" /></label>
+        <label class="journey-field">纬度*<input name="lat" required type="number" step="0.0001" placeholder="48.8566" /></label>
+        <label class="journey-field">经度*<input name="lng" required type="number" step="0.0001" placeholder="2.3522" /></label>
+        <label class="journey-field">开始日期*<input name="start" required type="date" /></label>
+        <label class="journey-field">结束日期*<input name="end" required type="date" /></label>
+        <label class="journey-field">季节<input name="season" placeholder="秋季" /></label>
+        <label class="journey-field">年份<input name="year" type="number" placeholder="2024" /></label>
+        <label class="journey-field">封面图<input name="heroImage" placeholder="https://..." /></label>
+        <label class="journey-field">POI（逗号分隔）<input name="poi" placeholder="埃菲尔铁塔, 卢浮宫" /></label>
+        <label class="journey-field">图集（逗号分隔 URL）<textarea name="gallery" rows="2" placeholder="多张图片用逗号分隔"></textarea></label>
+        <label class="journey-field">高光时刻（逗号分隔）<textarea name="highlights" rows="2" placeholder="最难忘的三件事"></textarea></label>
+        <label class="journey-field">同伴标签（逗号分隔）<input name="companions" placeholder="情侣, 朋友" /></label>
+        <label class="journey-field">主题标签（逗号分隔）<input name="theme" placeholder="Citywalk, 美食" /></label>
+        <label class="journey-field">交通方式（逗号分隔）<input name="transport" placeholder="飞机, 自驾" /></label>
+        <label class="journey-field">推荐指数（1-5）<input name="rating" type="number" min="1" max="5" placeholder="5" /></label>
+        <label class="journey-field">是否二刷<select name="revisit"><option value="false">否</option><option value="true">是</option></select></label>
+        <label class="journey-field">累计里程 (km)<input name="distance" type="number" min="0" placeholder="1000" /></label>
+        <label class="story-field">游记内容<textarea name="mood" rows="3" placeholder="这一刻的感受或长篇故事"></textarea></label>
         <div class="form-actions">
           <button type="button" class="ghost-btn" id="cancel-modal">取消</button>
           <button type="submit" class="primary-btn" id="modal-submit">完成填写并写入</button>

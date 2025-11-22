@@ -405,6 +405,13 @@ function setupRecordForm() {
   const headerTitle = document.getElementById('modal-title');
   const headerEyebrow = document.getElementById('modal-eyebrow');
   const submitBtn = document.getElementById('modal-submit');
+  const journeyFields = Array.from(form?.querySelectorAll('.journey-field input, .journey-field textarea, .journey-field select') || []);
+  const storyField = form?.querySelector('.story-field textarea[name="mood"]');
+  const requiredCache = new Map();
+
+  journeyFields.forEach((field) => {
+    requiredCache.set(field.name, field.required);
+  });
 
   function fillFormFromJourney(trip) {
     const setValue = (name, value) => {
@@ -439,18 +446,45 @@ function setupRecordForm() {
     setValue('mood', trip.mood);
   }
 
+  function setFormVariant(variant) {
+    if (!form) return;
+    if (variant === 'story') {
+      form.classList.add('story-only');
+      journeyFields.forEach((field) => {
+        field.disabled = true;
+        field.required = false;
+      });
+      if (storyField) {
+        storyField.disabled = false;
+        storyField.required = false;
+      }
+    } else {
+      form.classList.remove('story-only');
+      journeyFields.forEach((field) => {
+        field.disabled = false;
+        field.required = !!requiredCache.get(field.name);
+      });
+      if (storyField) {
+        storyField.disabled = false;
+      }
+    }
+  }
+
   function openModal(journeyToEdit) {
     form.reset();
     editingJourneyId = journeyToEdit?.id || '';
     form.dataset.mode = journeyToEdit ? 'edit' : 'create';
+    form.dataset.variant = journeyToEdit ? 'story' : 'full';
     const idInput = form.elements.id;
     if (journeyToEdit) {
       fillFormFromJourney(journeyToEdit);
       if (idInput) idInput.readOnly = true;
+      setFormVariant('story');
       headerEyebrow.textContent = '更新游记';
       headerTitle.textContent = '上传 / 编辑游记内容';
-      submitBtn.textContent = '保存修改';
+      submitBtn.textContent = '保存游记内容';
     } else {
+      setFormVariant('full');
       if (idInput) {
         idInput.value = `trip-${Date.now()}`;
         idInput.readOnly = false;
@@ -492,33 +526,44 @@ function setupRecordForm() {
     feedback.textContent = '写入中，请稍候...';
     try {
       const formData = new FormData(form);
-      const payload = {
-        id: (formData.get('id') || '').toString().trim(),
-        title: formData.get('title').trim(),
-        location: formData.get('location').trim(),
-        country: formData.get('country').trim(),
-        continent: formData.get('continent').trim(),
-        city: formData.get('city').trim(),
-        lat: parseFloat(formData.get('lat')),
-        lng: parseFloat(formData.get('lng')),
-        start: formData.get('start'),
-        end: formData.get('end'),
-        season: formData.get('season') || '',
-        year: formData.get('year') ? Number(formData.get('year')) : undefined,
-        heroImage: formData.get('heroImage'),
-        poi: parseList(formData.get('poi')),
-        gallery: parseList(formData.get('gallery')),
-        highlights: parseList(formData.get('highlights')),
-        companions: parseList(formData.get('companions')),
-        theme: parseList(formData.get('theme')),
-        transport: parseList(formData.get('transport')),
-        rating: formData.get('rating') ? Number(formData.get('rating')) : 0,
-        revisit: formData.get('revisit') === 'true',
-        distance: formData.get('distance') ? Number(formData.get('distance')) : 0,
-        mood: formData.get('mood') || ''
-      };
-
+      const variant = form.dataset.variant || 'full';
       const mode = form.dataset.mode || 'create';
+      let payload;
+
+      if (variant === 'story') {
+        const id = editingJourneyId || (formData.get('id') || '').toString().trim();
+        if (!id) {
+          throw new Error('缺少旅程 ID，无法保存游记内容。');
+        }
+        payload = { id, mood: formData.get('mood') || '' };
+      } else {
+        payload = {
+          id: (formData.get('id') || '').toString().trim(),
+          title: formData.get('title').trim(),
+          location: formData.get('location').trim(),
+          country: formData.get('country').trim(),
+          continent: formData.get('continent').trim(),
+          city: formData.get('city').trim(),
+          lat: parseFloat(formData.get('lat')),
+          lng: parseFloat(formData.get('lng')),
+          start: formData.get('start'),
+          end: formData.get('end'),
+          season: formData.get('season') || '',
+          year: formData.get('year') ? Number(formData.get('year')) : undefined,
+          heroImage: formData.get('heroImage'),
+          poi: parseList(formData.get('poi')),
+          gallery: parseList(formData.get('gallery')),
+          highlights: parseList(formData.get('highlights')),
+          companions: parseList(formData.get('companions')),
+          theme: parseList(formData.get('theme')),
+          transport: parseList(formData.get('transport')),
+          rating: formData.get('rating') ? Number(formData.get('rating')) : 0,
+          revisit: formData.get('revisit') === 'true',
+          distance: formData.get('distance') ? Number(formData.get('distance')) : 0,
+          mood: formData.get('mood') || ''
+        };
+      }
+
       const targetId = mode === 'edit' ? editingJourneyId || payload.id : payload.id;
       const endpoint = mode === 'edit' ? `/api/journeys/${encodeURIComponent(targetId)}` : '/api/journeys';
       const method = mode === 'edit' ? 'PUT' : 'POST';
