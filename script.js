@@ -2,6 +2,7 @@ let journeys = [];
 let heatmapData = [];
 let passportStamps = [];
 let tagFilters = ['全部'];
+let recordButtonsBound = false;
 
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
@@ -163,6 +164,23 @@ function renderHeroMetrics() {
   if (countryEl) countryEl.textContent = countries.size;
   if (distanceEl) distanceEl.textContent = `${totalDistance.toLocaleString()} km`;
   if (ratingEl) ratingEl.textContent = `${rating.toFixed(1)} ★`;
+}
+
+function renderAll() {
+  buildDerivedData();
+  renderHeroMetrics();
+  renderMap();
+  renderTimeline();
+  renderGallery();
+  renderHighlights();
+  renderStories();
+  renderStats();
+  renderAchievements();
+  renderTags();
+  renderPassport();
+  renderThenNow();
+  renderHeatmap('heatmap', heatmapData);
+  renderMiniHeatmap();
 }
 
 function renderStats() {
@@ -365,27 +383,110 @@ async function fetchJourneys() {
   return payload.journeys || [];
 }
 
+function parseList(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function setupRecordForm() {
+  if (recordButtonsBound) return;
+  recordButtonsBound = true;
+
+  const modal = document.getElementById('journey-modal');
+  const form = document.getElementById('journey-form');
+  const feedback = document.getElementById('form-feedback');
+  const closeBtn = document.getElementById('close-modal');
+  const cancelBtn = document.getElementById('cancel-modal');
+
+  function openModal() {
+    form.reset();
+    const idInput = form.elements.id;
+    if (idInput) idInput.value = `trip-${Date.now()}`;
+    feedback.textContent = '';
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  document.querySelectorAll('[data-action="record"]').forEach((btn) => {
+    btn.addEventListener('click', openModal);
+  });
+
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    feedback.textContent = '写入中，请稍候...';
+    try {
+      const formData = new FormData(form);
+      const payload = {
+        id: formData.get('id').trim(),
+        title: formData.get('title').trim(),
+        location: formData.get('location').trim(),
+        country: formData.get('country').trim(),
+        continent: formData.get('continent').trim(),
+        city: formData.get('city').trim(),
+        lat: parseFloat(formData.get('lat')),
+        lng: parseFloat(formData.get('lng')),
+        start: formData.get('start'),
+        end: formData.get('end'),
+        season: formData.get('season') || '',
+        year: formData.get('year') ? Number(formData.get('year')) : undefined,
+        heroImage: formData.get('heroImage'),
+        poi: parseList(formData.get('poi')),
+        gallery: parseList(formData.get('gallery')),
+        highlights: parseList(formData.get('highlights')),
+        companions: parseList(formData.get('companions')),
+        theme: parseList(formData.get('theme')),
+        transport: parseList(formData.get('transport')),
+        rating: formData.get('rating') ? Number(formData.get('rating')) : 0,
+        revisit: formData.get('revisit') === 'true',
+        distance: formData.get('distance') ? Number(formData.get('distance')) : 0,
+        mood: formData.get('mood') || ''
+      };
+
+      const response = await fetch('/api/journeys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || '写入失败，请检查必填项。');
+      }
+
+      const result = await response.json();
+      const saved = result.journey;
+      journeys = [saved, ...journeys.filter((j) => j.id !== saved.id)];
+      renderAll();
+      feedback.textContent = '写入成功，已刷新最新数据。';
+      setTimeout(() => closeModal(), 600);
+    } catch (error) {
+      console.error(error);
+      feedback.textContent = error.message;
+    }
+  });
+}
+
 async function init() {
+  setupRecordForm();
   try {
     journeys = await fetchJourneys();
     if (!journeys.length) {
       showErrorState('暂无数据，请先添加旅程或执行 seed。');
       return;
     }
-    buildDerivedData();
-    renderHeroMetrics();
-    renderMap();
-    renderTimeline();
-    renderGallery();
-    renderHighlights();
-    renderStories();
-    renderStats();
-    renderAchievements();
-    renderTags();
-    renderPassport();
-    renderThenNow();
-    renderHeatmap('heatmap', heatmapData);
-    renderMiniHeatmap();
+    renderAll();
   } catch (error) {
     console.error(error);
     showErrorState(error.message);

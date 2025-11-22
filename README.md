@@ -18,7 +18,9 @@
    npm start
    ```
    浏览器访问 `http://localhost:3000`，页面将通过 `/api/journeys` 动态读取数据库中的旅程数据。
-4. 新增旅程（可选）：向 `http://localhost:3000/api/journeys` 发送 `POST` 请求，JSON 结构参考示例字段（必填：`id`、`title`、`location`、`country`、`continent`、`city`、`lat`、`lng`、`start`、`end`）。
+4. 新增旅程（可选）：
+   - 前端：点击右上角或底部的「开始记录」按钮，填写弹出的数据表，提交后会直接写入数据库并刷新界面。
+   - API：也可向 `http://localhost:3000/api/journeys` 发送 `POST` 请求，JSON 结构参考示例字段（必填：`id`、`title`、`location`、`country`、`continent`、`city`、`lat`、`lng`、`start`、`end`）。
 
 > 如果仍想查看静态版本，可用 Python/Node 静态服务器直接打开，但因为缺少 API 会显示“无法加载旅程数据”。
 
