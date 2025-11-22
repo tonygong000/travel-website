@@ -282,10 +282,49 @@ main {
   position: relative;
   height: 360px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.08)),
-    url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg') center/cover;
   overflow: hidden;
   border: 1px solid var(--border);
+}
+
+.map-inner {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.08)),
+    url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg') center/cover;
+  transform-origin: top left;
+  transition: transform 0.25s ease;
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(12, 17, 22, 0.72);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  backdrop-filter: blur(6px);
+}
+
+.map-controls button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.map-controls button:hover {
+  background: var(--accent);
+  border-color: var(--accent-2);
 }
 
 .marker {

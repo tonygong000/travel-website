@@ -4,6 +4,10 @@ let passportStamps = [];
 let tagFilters = ['全部'];
 let recordButtonsBound = false;
 let editingJourneyId = '';
+let mapState = {
+  scale: 1,
+  focus: { lat: 20, lng: 0 }
+};
 
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
@@ -48,7 +52,14 @@ function buildDerivedData() {
 
 function renderMap() {
   const map = document.getElementById('world-map');
-  map.innerHTML = '';
+  map.innerHTML = `
+    <div class="map-inner"></div>
+    <div class="map-controls" aria-label="地图缩放">
+      <button type="button" data-zoom="in" aria-label="放大地图">＋</button>
+      <button type="button" data-zoom="out" aria-label="缩小地图">－</button>
+    </div>
+  `;
+  const mapInner = map.querySelector('.map-inner');
   journeys.forEach((trip) => {
     const marker = document.createElement('div');
     marker.className = 'marker';
@@ -61,8 +72,41 @@ function renderMap() {
     tooltip.innerHTML = `<strong>${trip.city}</strong><br/>${trip.country} · ${trip.start} → ${trip.end}`;
 
     marker.appendChild(tooltip);
-    map.appendChild(marker);
+    marker.addEventListener('click', () => {
+      mapState.focus = { lat: trip.lat, lng: trip.lng };
+      mapState.scale = Math.min(4, mapState.scale + 0.6);
+      updateMapTransform();
+    });
+    mapInner.appendChild(marker);
   });
+
+  const zoomButtons = map.querySelectorAll('button[data-zoom]');
+  zoomButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const delta = btn.dataset.zoom === 'in' ? 0.4 : -0.4;
+      mapState.scale = Math.min(4, Math.max(1, mapState.scale + delta));
+      updateMapTransform();
+    });
+  });
+
+  const centerLat = journeys.length
+    ? journeys.reduce((sum, trip) => sum + trip.lat, 0) / journeys.length
+    : mapState.focus.lat;
+  const centerLng = journeys.length
+    ? journeys.reduce((sum, trip) => sum + trip.lng, 0) / journeys.length
+    : mapState.focus.lng;
+  mapState.focus = { lat: centerLat, lng: centerLng };
+  updateMapTransform();
+}
+
+function updateMapTransform() {
+  const map = document.getElementById('world-map');
+  const mapInner = map?.querySelector('.map-inner');
+  if (!mapInner) return;
+  const { x, y } = latLngToPosition(mapState.focus.lat, mapState.focus.lng);
+  const translateX = 50 - x * mapState.scale;
+  const translateY = 50 - y * mapState.scale;
+  mapInner.style.transform = `translate(${translateX}%, ${translateY}%) scale(${mapState.scale})`;
 }
 
 function renderTimeline() {
