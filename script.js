@@ -1,138 +1,7 @@
-const journeys = [
-  {
-    id: 'paris2023',
-    title: '巴黎秋日 Citywalk',
-    location: '巴黎, 法国',
-    country: '法国',
-    continent: '欧洲',
-    city: '巴黎',
-    poi: ['埃菲尔铁塔', '卢浮宫', '塞纳河'],
-    lat: 48.8566,
-    lng: 2.3522,
-    start: '2023-09-20',
-    end: '2023-09-27',
-    season: '秋季',
-    year: 2023,
-    heroImage: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1522093132552-310aea2b0d74?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1508057198894-247b23fe5ade?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=800&q=80'
-    ],
-    highlights: ['雨后的塞纳河漫步', '卢浮宫闭馆前独享寂静', '圣礼拜堂彩窗沐浴阳光'],
-    companions: ['情侣'],
-    theme: ['Citywalk', '美食之旅'],
-    transport: ['飞机', '火车', '步行'],
-    rating: 5,
-    revisit: true,
-    distance: 9700,
-    mood: '落叶飘进纸杯拿铁的那刻，觉得世界温柔起来。'
-  },
-  {
-    id: 'kyoto2022',
-    title: '京都慢旅',
-    location: '京都, 日本',
-    country: '日本',
-    continent: '亚洲',
-    city: '京都',
-    poi: ['伏见稻荷大社', '岚山竹林', '先斗町'],
-    lat: 35.0116,
-    lng: 135.7681,
-    start: '2022-03-15',
-    end: '2022-03-22',
-    season: '春季',
-    year: 2022,
-    heroImage: 'https://images.unsplash.com/photo-1504788363733-507549153474?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1504788366400-8e2287a6cc57?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1504788366400-99b57a6cc57?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=800&q=80'
-    ],
-    highlights: ['凌晨登顶稻荷山看日出', '岚山竹林的风声', '先斗町河畔和服约会'],
-    companions: ['独自', '朋友'],
-    theme: ['文化朝圣', 'Citywalk'],
-    transport: ['飞机', '地铁', '步行'],
-    rating: 4,
-    revisit: false,
-    distance: 2500,
-    mood: '樱花飘落肩头，好像全城都在为我拍彩带。'
-  },
-  {
-    id: 'banff2024',
-    title: '落基山公路自驾',
-    location: '班夫, 加拿大',
-    country: '加拿大',
-    continent: '北美洲',
-    city: '班夫',
-    poi: ['路易斯湖', '梦莲湖', '冰原大道'],
-    lat: 51.1784,
-    lng: -115.5708,
-    start: '2024-06-02',
-    end: '2024-06-11',
-    season: '夏季',
-    year: 2024,
-    heroImage: 'https://images.unsplash.com/photo-1508261306217-1a1b2b85da41?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1508264165352-258859e62245?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1508264019162-5d12a2a8c884?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1508261306217-1a1b2b85da41?auto=format&fit=crop&w=800&q=80'
-    ],
-    highlights: ['梦莲湖日出泛舟', '冰原大道星空', '熊出没的越野徒步'],
-    companions: ['家庭'],
-    theme: ['自驾', '徒步'],
-    transport: ['飞机', '自驾', '徒步'],
-    rating: 5,
-    revisit: true,
-    distance: 14000,
-    mood: '雪山倒映在湖面，像把现实和梦境重叠到了一起。'
-  },
-  {
-    id: 'rome2021',
-    title: '罗马复古周末',
-    location: '罗马, 意大利',
-    country: '意大利',
-    continent: '欧洲',
-    city: '罗马',
-    poi: ['斗兽场', '特雷维喷泉', '万神殿'],
-    lat: 41.9028,
-    lng: 12.4964,
-    start: '2021-10-08',
-    end: '2021-10-12',
-    season: '秋季',
-    year: 2021,
-    heroImage: 'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1200&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1505765050516-f72dcac9c60a?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1505765062320-ebe9b4c2b44a?auto=format&fit=crop&w=800&q=80'
-    ],
-    highlights: ['在特雷维喷泉扔硬币', '万神殿的光柱', '复古 Vespa 穿街巷'],
-    companions: ['情侣'],
-    theme: ['复古漫游', '美食之旅'],
-    transport: ['飞机', '地铁', '步行'],
-    rating: 4,
-    revisit: false,
-    distance: 9200,
-    mood: '黄昏的罗马像上世纪的电影，胶片颗粒感肉眼可见。'
-  }
-];
-
-const heatmapData = Array.from({ length: 80 }, (_, index) => {
-  const level = (index % 7) + 1;
-  const anchor = journeys[index % journeys.length];
-  return {
-    level,
-    label: `${anchor.city} · ${anchor.season}`
-  };
-});
-
-const passportStamps = journeys.map((trip) => ({
-  title: `${trip.city.toUpperCase()} · ${trip.year}`,
-  note: `${trip.country} · ${trip.poi[0]}`,
-  mood: trip.mood
-}));
-
-const tagFilters = ['全部', 'Citywalk', '美食之旅', '自驾', '徒步', '文化朝圣', '家庭', '情侣'];
+let journeys = [];
+let heatmapData = [];
+let passportStamps = [];
+let tagFilters = ['全部'];
 
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
@@ -140,8 +9,44 @@ function latLngToPosition(lat, lng) {
   return { x, y };
 }
 
+function buildDerivedData() {
+  passportStamps = journeys.map((trip) => ({
+    title: `${trip.city?.toUpperCase?.() || '未知'} · ${trip.year || ''}`,
+    note: `${trip.country || ''} · ${(trip.poi || [])[0] || ''}`,
+    mood: trip.mood || ''
+  }));
+
+  const tags = new Set(['全部']);
+  journeys.forEach((trip) => {
+    (trip.theme || []).forEach((t) => tags.add(t));
+    (trip.companions || []).forEach((t) => tags.add(t));
+  });
+  tagFilters = Array.from(tags);
+
+  const base = [];
+  journeys.forEach((trip, index) => {
+    const stayDays = Math.max(1, (new Date(trip.end) - new Date(trip.start)) / (1000 * 60 * 60 * 24));
+    const level = Math.min(4, Math.ceil(stayDays / 3));
+    base.push({
+      level,
+      label: `${trip.city} · ${trip.season || trip.year || ''}`
+    });
+
+    // Add a second entry for longer trips to make the heatmap richer
+    if (index % 2 === 0) {
+      base.push({ level: Math.max(1, level - 1), label: `${trip.city} · 重访` });
+    }
+  });
+
+  while (base.length < 80 && base.length) {
+    base.push(base[base.length % journeys.length]);
+  }
+  heatmapData = base.slice(0, 80);
+}
+
 function renderMap() {
   const map = document.getElementById('world-map');
+  map.innerHTML = '';
   journeys.forEach((trip) => {
     const marker = document.createElement('div');
     marker.className = 'marker';
@@ -160,6 +65,7 @@ function renderMap() {
 
 function renderTimeline() {
   const container = document.getElementById('timeline');
+  container.innerHTML = '';
   const sorted = [...journeys].sort((a, b) => new Date(b.start) - new Date(a.start));
 
   sorted.forEach((trip) => {
@@ -169,12 +75,12 @@ function renderTimeline() {
       <header>
         <div>
           <strong>${trip.title}</strong>
-          <p class="subtle">${trip.location} · ${trip.season} ${trip.year}</p>
+          <p class="subtle">${trip.location} · ${trip.season || ''} ${trip.year || ''}</p>
         </div>
         <span class="badge">${trip.start} → ${trip.end}</span>
       </header>
-      <p>${trip.mood}</p>
-      <p class="subtle">POI: ${trip.poi.join(' / ')}</p>
+      <p>${trip.mood || '这一段旅程等待你补充故事。'}</p>
+      <p class="subtle">POI: ${(trip.poi || []).join(' / ')}</p>
     `;
     container.appendChild(card);
   });
@@ -182,6 +88,7 @@ function renderTimeline() {
 
 function renderGallery() {
   const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
   journeys.forEach((trip) => {
     const card = document.createElement('div');
     card.className = 'gallery-card';
@@ -189,8 +96,8 @@ function renderGallery() {
       <img src="${trip.heroImage}" alt="${trip.city} hero" loading="lazy" />
       <div class="meta">
         <strong>${trip.city}</strong>
-        <p class="subtle">${trip.country} · ${trip.season} ${trip.year}</p>
-        <p>${trip.mood}</p>
+        <p class="subtle">${trip.country} · ${trip.season || ''} ${trip.year || ''}</p>
+        <p>${trip.mood || ''}</p>
       </div>
     `;
     gallery.appendChild(card);
@@ -203,21 +110,27 @@ function renderHighlights() {
   journeys.forEach((trip) => {
     const item = document.createElement('div');
     item.className = 'highlight-item';
-    item.innerHTML = `<strong>${trip.city}</strong><p>${trip.highlights.join(' · ')}</p>`;
+    item.innerHTML = `<strong>${trip.city}</strong><p>${(trip.highlights || []).join(' · ')}</p>`;
     highlights.appendChild(item);
   });
+
+  const exif = document.createElement('p');
+  exif.className = 'small';
+  exif.textContent = 'EXIF 自动提取：拍摄时间与 GPS 坐标已写入时间轴，无需手动输入。';
+  highlights.appendChild(exif);
 }
 
 function renderStories() {
   const stories = document.getElementById('stories');
+  stories.innerHTML = '';
   journeys.forEach((trip) => {
     const card = document.createElement('div');
     card.className = 'story-card';
     card.innerHTML = `
-      <p class="eyebrow">${trip.year} · ${trip.season}</p>
+      <p class="eyebrow">${trip.year || ''} · ${trip.season || ''}</p>
       <h4>${trip.title}</h4>
       <p class="subtle">${trip.location} · ${trip.start} → ${trip.end}</p>
-      <p>${trip.mood}</p>
+      <p>${trip.mood || '点击上传游记，填补这一段空白。'}</p>
     `;
     stories.appendChild(card);
   });
@@ -226,9 +139,9 @@ function renderStories() {
 function calcStats() {
   const countries = new Set(journeys.map((t) => t.country));
   const continents = new Set(journeys.map((t) => t.continent));
-  const totalDistance = journeys.reduce((sum, trip) => sum + trip.distance, 0);
+  const totalDistance = journeys.reduce((sum, trip) => sum + (trip.distance || 0), 0);
   const revisitCount = journeys.filter((trip) => trip.revisit).length;
-  const modes = journeys.flatMap((trip) => trip.transport);
+  const modes = journeys.flatMap((trip) => trip.transport || []);
   const modeCount = modes.reduce((acc, mode) => {
     acc[mode] = (acc[mode] || 0) + 1;
     return acc;
@@ -237,15 +150,31 @@ function calcStats() {
   return { countries, continents, totalDistance, revisitCount, modeCount };
 }
 
+function renderHeroMetrics() {
+  const { countries, totalDistance } = calcStats();
+  const rating = journeys.length
+    ? journeys.reduce((sum, trip) => sum + (trip.rating || 0), 0) / journeys.length
+    : 0;
+
+  const countryEl = document.getElementById('hero-countries');
+  const distanceEl = document.getElementById('hero-distance');
+  const ratingEl = document.getElementById('hero-rating');
+
+  if (countryEl) countryEl.textContent = countries.size;
+  if (distanceEl) distanceEl.textContent = `${totalDistance.toLocaleString()} km`;
+  if (ratingEl) ratingEl.textContent = `${rating.toFixed(1)} ★`;
+}
+
 function renderStats() {
   const grid = document.getElementById('stats-grid');
+  grid.innerHTML = '';
   const { countries, continents, totalDistance, revisitCount, modeCount } = calcStats();
 
   const stats = [
     { title: '已去国家数量', value: `${countries.size}/197`, desc: '世界地图点亮进度', progress: (countries.size / 197) * 100 },
     { title: '已去大洲数量', value: continents.size, desc: '从亚洲到北美洲的足迹', progress: (continents.size / 7) * 100 },
     { title: '总里程数', value: `${totalDistance.toLocaleString()} km`, desc: '飞机/自驾/火车的累计距离', progress: 100 },
-    { title: '重访率', value: `${revisitCount} 次二刷`, desc: '那些念念不忘的城市', progress: (revisitCount / journeys.length) * 100 }
+    { title: '重访率', value: `${revisitCount} 次二刷`, desc: '那些念念不忘的城市', progress: journeys.length ? (revisitCount / journeys.length) * 100 : 0 }
   ];
 
   stats.forEach((item) => {
@@ -276,6 +205,7 @@ function renderStats() {
 
 function renderAchievements() {
   const container = document.getElementById('achievements');
+  container.innerHTML = '';
   const { countries, totalDistance } = calcStats();
   const badges = [
     { title: '护照印章收藏家', desc: `解锁 ${countries.size} 个国家的印章`, icon: '🛂' },
@@ -297,18 +227,21 @@ function renderTags() {
   const cardsContainer = document.getElementById('tag-cards');
   let active = '全部';
 
+  filterContainer.innerHTML = '';
+  cardsContainer.innerHTML = '';
+
   function paintCards(filter) {
     cardsContainer.innerHTML = '';
     journeys
-      .filter((trip) => filter === '全部' || trip.theme.includes(filter) || trip.companions.includes(filter))
+      .filter((trip) => filter === '全部' || (trip.theme || []).includes(filter) || (trip.companions || []).includes(filter))
       .forEach((trip) => {
         const card = document.createElement('div');
         card.className = 'tag-card';
         card.innerHTML = `
-          <p class="eyebrow">${trip.companions.join(' · ')}</p>
+          <p class="eyebrow">${(trip.companions || []).join(' · ')}</p>
           <h4>${trip.title}</h4>
-          <p class="subtle">${trip.theme.join(' / ')}</p>
-          <p>推荐指数：${'★'.repeat(trip.rating)}${'☆'.repeat(5 - trip.rating)}</p>
+          <p class="subtle">${(trip.theme || []).join(' / ')}</p>
+          <p>推荐指数：${'★'.repeat(trip.rating || 0)}${'☆'.repeat(5 - (trip.rating || 0))}</p>
           <p class="subtle">二刷：${trip.revisit ? 'Yes' : 'No'}</p>
         `;
         cardsContainer.appendChild(card);
@@ -346,7 +279,13 @@ function renderThenNow() {
   container.innerHTML = `<p class="eyebrow">此时彼刻</p><h4>同一地点，不同年份</h4>`;
   const slot = document.createElement('div');
   slot.className = 'images';
-  const pairs = [
+
+  const pairs = journeys.slice(0, 2).map((trip) => ({
+    label: `${trip.city} · ${trip.year || ''}`,
+    src: (trip.gallery && trip.gallery[0]) || trip.heroImage
+  }));
+
+  const fallback = [
     {
       label: '京都 · 2022',
       src: 'https://images.unsplash.com/photo-1504788363733-507549153474?auto=format&fit=crop&w=800&q=80'
@@ -357,7 +296,7 @@ function renderThenNow() {
     }
   ];
 
-  pairs.forEach((item) => {
+  (pairs.length >= 2 ? pairs : fallback).forEach((item) => {
     const fig = document.createElement('figure');
     const img = document.createElement('img');
     img.src = item.src;
@@ -380,6 +319,7 @@ function renderThenNow() {
 
 function renderHeatmap(targetId, data) {
   const container = document.getElementById(targetId);
+  container.innerHTML = '';
   data.forEach((cell) => {
     const block = document.createElement('div');
     block.className = 'heat-cell';
@@ -391,6 +331,7 @@ function renderHeatmap(targetId, data) {
 
 function renderMiniHeatmap() {
   const mini = document.getElementById('mini-heatmap');
+  mini.innerHTML = '';
   const sample = heatmapData.slice(0, 48);
   sample.forEach((cell) => {
     const block = document.createElement('div');
@@ -402,28 +343,53 @@ function renderMiniHeatmap() {
   });
 }
 
-function renderHighLightsList() {
-  const highlights = document.getElementById('highlights');
-  const exif = document.createElement('p');
-  exif.className = 'small';
-  exif.textContent = 'EXIF 自动提取：拍摄时间与 GPS 坐标已写入时间轴，无需手动输入。';
-  highlights.appendChild(exif);
+function showErrorState(message) {
+  const main = document.querySelector('main');
+  main.innerHTML = `
+    <section class="panel">
+      <div class="error-state">
+        <h3>无法加载旅程数据</h3>
+        <p>${message}</p>
+        <p class="small">请确保已运行 <code>npm start</code> 并保持服务在线。</p>
+      </div>
+    </section>
+  `;
 }
 
-function init() {
-  renderMap();
-  renderTimeline();
-  renderGallery();
-  renderHighlights();
-  renderHighLightsList();
-  renderStories();
-  renderStats();
-  renderAchievements();
-  renderTags();
-  renderPassport();
-  renderThenNow();
-  renderHeatmap('heatmap', heatmapData);
-  renderMiniHeatmap();
+async function fetchJourneys() {
+  const response = await fetch('/api/journeys');
+  if (!response.ok) {
+    throw new Error('无法从 API 获取旅程列表');
+  }
+  const payload = await response.json();
+  return payload.journeys || [];
+}
+
+async function init() {
+  try {
+    journeys = await fetchJourneys();
+    if (!journeys.length) {
+      showErrorState('暂无数据，请先添加旅程或执行 seed。');
+      return;
+    }
+    buildDerivedData();
+    renderHeroMetrics();
+    renderMap();
+    renderTimeline();
+    renderGallery();
+    renderHighlights();
+    renderStories();
+    renderStats();
+    renderAchievements();
+    renderTags();
+    renderPassport();
+    renderThenNow();
+    renderHeatmap('heatmap', heatmapData);
+    renderMiniHeatmap();
+  } catch (error) {
+    console.error(error);
+    showErrorState(error.message);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -561,6 +561,22 @@ main {
   padding: 12px;
 }
 
+.error-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, rgba(92, 160, 255, 0.08), rgba(102, 228, 193, 0.08));
+  border: 1px dashed #2c3a55;
+  border-radius: 12px;
+}
+
+.error-state h3 {
+  margin-bottom: 8px;
+}
+
+.error-state p {
+  color: #a7b6d7;
+}
+
 .heatmap {
   display: grid;
   grid-template-columns: repeat(20, 12px);
