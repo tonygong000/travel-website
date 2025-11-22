@@ -6,8 +6,19 @@ let recordButtonsBound = false;
 let editingJourneyId = '';
 let mapState = {
   scale: 1,
-  focus: { lat: 20, lng: 0 }
+  panX: 0,
+  panY: 0,
+  focus: { lat: 20, lng: 0 },
+  selectedCountry: '',
+  view: 'world'
 };
+
+const focusableCountries = [
+  { key: 'usa', label: '美国', lat: 39.8, lng: -98.6, zoom: 3.6 },
+  { key: 'china', label: '中国', lat: 35.8, lng: 103.8, zoom: 3.7 },
+  { key: 'japan', label: '日本', lat: 37.2, lng: 139.7, zoom: 4.3 },
+  { key: 'europe', label: '欧洲', lat: 50.1, lng: 14.4, zoom: 3.4 }
+];
 
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
@@ -58,6 +69,15 @@ function renderMap() {
       <button type="button" data-zoom="in" aria-label="放大地图">＋</button>
       <button type="button" data-zoom="out" aria-label="缩小地图">－</button>
     </div>
+    <div class="map-view-toggle" aria-label="地图视图切换">
+      <button type="button" data-view="world" class="active">世界视图</button>
+      <button type="button" data-view="country">国家视图</button>
+    </div>
+    <div class="map-country-chips" aria-label="快捷跳转国家">
+      ${focusableCountries
+        .map((item) => `<button type="button" data-country="${item.key}">${item.label}</button>`)
+        .join('')}
+    </div>
   `;
   const mapInner = map.querySelector('.map-inner');
   journeys.forEach((trip) => {
@@ -71,11 +91,14 @@ function renderMap() {
     tooltip.className = 'marker-tooltip';
     tooltip.innerHTML = `<strong>${trip.city}</strong><br/>${trip.country} · ${trip.start} → ${trip.end}`;
 
+    const label = document.createElement('div');
+    label.className = 'marker-label';
+    label.textContent = trip.city;
+
     marker.appendChild(tooltip);
+    marker.appendChild(label);
     marker.addEventListener('click', () => {
-      mapState.focus = { lat: trip.lat, lng: trip.lng };
-      mapState.scale = Math.min(4, mapState.scale + 0.6);
-      updateMapTransform();
+      focusOnPosition(trip.lat, trip.lng, Math.min(5, mapState.scale + 0.9));
     });
     mapInner.appendChild(marker);
   });
@@ -84,29 +107,190 @@ function renderMap() {
   zoomButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const delta = btn.dataset.zoom === 'in' ? 0.4 : -0.4;
-      mapState.scale = Math.min(4, Math.max(1, mapState.scale + delta));
-      updateMapTransform();
+      setScale(mapState.scale + delta, { origin: { x: 50, y: 50 } });
     });
   });
 
+  bindCountryChips(map);
+  bindViewToggle(map);
+  bindWheelZoom(map);
+  bindDrag(map);
+
+  resetWorldView();
+}
+
+function setScale(nextScale, options = {}) {
+  const map = document.getElementById('world-map');
+  const mapInner = map?.querySelector('.map-inner');
+  if (!mapInner) return;
+
+  const rect = map.getBoundingClientRect();
+  const { origin, pointerX, pointerY } = options;
+  const oldScale = mapState.scale;
+  const newScale = Math.min(6, Math.max(1, nextScale));
+
+  if (origin && rect.width && rect.height) {
+    const worldX = (origin.x - mapState.panX) / (oldScale * 100);
+    const worldY = (origin.y - mapState.panY) / (oldScale * 100);
+    mapState.panX = origin.x - worldX * newScale * 100;
+    mapState.panY = origin.y - worldY * newScale * 100;
+  } else if (pointerX !== undefined && pointerY !== undefined && rect.width && rect.height) {
+    const originX = ((pointerX - rect.left) / rect.width) * 100;
+    const originY = ((pointerY - rect.top) / rect.height) * 100;
+    const worldX = (originX - mapState.panX) / (oldScale * 100);
+    const worldY = (originY - mapState.panY) / (oldScale * 100);
+    mapState.panX = originX - worldX * newScale * 100;
+    mapState.panY = originY - worldY * newScale * 100;
+  }
+
+  mapState.scale = newScale;
+  updateMapTransform();
+}
+
+function focusOnPosition(lat, lng, nextScale) {
+  const { x, y } = latLngToPosition(lat, lng);
+  mapState.focus = { lat, lng };
+  mapState.view = 'country';
+  mapState.selectedCountry = '';
+  mapState.panX = 50 - x * (nextScale || mapState.scale);
+  mapState.panY = 50 - y * (nextScale || mapState.scale);
+  setScale(nextScale || mapState.scale, { origin: { x: 50, y: 50 } });
+  updateViewButtons();
+}
+
+function resetWorldView() {
   const centerLat = journeys.length
     ? journeys.reduce((sum, trip) => sum + trip.lat, 0) / journeys.length
     : mapState.focus.lat;
   const centerLng = journeys.length
     ? journeys.reduce((sum, trip) => sum + trip.lng, 0) / journeys.length
     : mapState.focus.lng;
+
+  const targetScale = journeys.length > 1 ? 1.6 : 1.2;
+  const { x, y } = latLngToPosition(centerLat, centerLng);
   mapState.focus = { lat: centerLat, lng: centerLng };
+  mapState.view = 'world';
+  mapState.selectedCountry = '';
+  mapState.panX = 50 - x * targetScale;
+  mapState.panY = 50 - y * targetScale;
+  mapState.scale = targetScale;
+  updateViewButtons();
+  updateCountryButtons();
   updateMapTransform();
+}
+
+function focusOnCountry(key) {
+  const country = focusableCountries.find((c) => c.key === key);
+  if (!country) return;
+  mapState.selectedCountry = key;
+  mapState.view = 'country';
+  const { x, y } = latLngToPosition(country.lat, country.lng);
+  mapState.focus = { lat: country.lat, lng: country.lng };
+  mapState.panX = 50 - x * country.zoom;
+  mapState.panY = 50 - y * country.zoom;
+  mapState.scale = country.zoom;
+  updateViewButtons();
+  updateCountryButtons();
+  updateMapTransform();
+}
+
+function bindCountryChips(map) {
+  const chips = map.querySelectorAll('[data-country]');
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      focusOnCountry(chip.dataset.country);
+    });
+  });
+}
+
+function bindViewToggle(map) {
+  const viewButtons = map.querySelectorAll('[data-view]');
+  viewButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.view === 'world') {
+        resetWorldView();
+      } else if (btn.dataset.view === 'country' && mapState.selectedCountry) {
+        focusOnCountry(mapState.selectedCountry);
+      }
+    });
+  });
+  updateViewButtons();
+}
+
+function updateViewButtons() {
+  document.querySelectorAll('.map-view-toggle button').forEach((btn) => {
+    const active = btn.dataset.view === mapState.view;
+    btn.classList.toggle('active', active);
+    if (btn.dataset.view === 'country') {
+      btn.disabled = !mapState.selectedCountry;
+      btn.textContent = mapState.selectedCountry ? '返回国家视图' : '国家视图';
+    }
+  });
+}
+
+function updateCountryButtons() {
+  document.querySelectorAll('.map-country-chips button').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.country === mapState.selectedCountry);
+  });
+}
+
+function bindWheelZoom(map) {
+  map.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      const delta = event.deltaY < 0 ? 0.1 : -0.1;
+      const next = mapState.scale * (1 + delta);
+      setScale(next, { pointerX: event.clientX, pointerY: event.clientY });
+    },
+    { passive: false }
+  );
+}
+
+function bindDrag(map) {
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+
+  map.addEventListener('pointerdown', (event) => {
+    isDragging = true;
+    startX = event.clientX;
+    startY = event.clientY;
+    map.querySelector('.map-inner').style.cursor = 'grabbing';
+    map.setPointerCapture(event.pointerId);
+  });
+
+  map.addEventListener('pointermove', (event) => {
+    if (!isDragging) return;
+    const rect = map.getBoundingClientRect();
+    const dx = ((event.clientX - startX) / rect.width) * 100;
+    const dy = ((event.clientY - startY) / rect.height) * 100;
+    mapState.panX += dx;
+    mapState.panY += dy;
+    startX = event.clientX;
+    startY = event.clientY;
+    updateMapTransform();
+  });
+
+  map.addEventListener('pointerup', (event) => {
+    if (!isDragging) return;
+    isDragging = false;
+    map.querySelector('.map-inner').style.cursor = 'grab';
+    map.releasePointerCapture(event.pointerId);
+  });
+
+  map.addEventListener('pointerleave', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    map.querySelector('.map-inner').style.cursor = 'grab';
+  });
 }
 
 function updateMapTransform() {
   const map = document.getElementById('world-map');
   const mapInner = map?.querySelector('.map-inner');
   if (!mapInner) return;
-  const { x, y } = latLngToPosition(mapState.focus.lat, mapState.focus.lng);
-  const translateX = 50 - x * mapState.scale;
-  const translateY = 50 - y * mapState.scale;
-  mapInner.style.transform = `translate(${translateX}%, ${translateY}%) scale(${mapState.scale})`;
+  mapInner.style.transform = `translate(${mapState.panX}%, ${mapState.panY}%) scale(${mapState.scale})`;
 }
 
 function renderTimeline() {
