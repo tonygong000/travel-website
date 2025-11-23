@@ -409,6 +409,13 @@ main {
   border-color: var(--accent-2);
 }
 
+.map-controls button.active {
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: #0c1116;
+  border-color: var(--accent-2);
+  font-weight: 700;
+}
+
 .marker {
   position: absolute;
   transform: translate(-50%, -50%);

@@ -10,7 +10,13 @@ let mapState = {
   panY: 0,
   focus: { lat: 20, lng: 0 },
   selectedCountry: '',
-  view: 'world'
+  view: 'world',
+  animateRoute: true
+};
+
+const mapCache = {
+  key: '',
+  points: null
 };
 
 const focusableCountries = [
@@ -20,6 +26,47 @@ const focusableCountries = [
   { key: 'europe', label: '欧洲', lat: 50.1, lng: 14.4, zoom: 3.4 }
 ];
 
+function markMapDirty() {
+  mapCache.key = '';
+  mapCache.points = null;
+}
+
+function buildMapCacheKey() {
+  return journeys
+    .map((trip) => `${trip.id || trip.title || ''}-${trip.start || ''}-${trip.lat || ''}-${trip.lng || ''}`)
+    .join('|');
+}
+
+function formatTripDate(trip = {}) {
+  if (trip.start && trip.end && trip.start !== trip.end) return `${trip.start} → ${trip.end}`;
+  return trip.start || trip.end || '';
+}
+
+function getMarkerIcon(trip, variant) {
+  if (variant === 'start') return '🚩';
+  if (variant === 'end') return '🏁';
+  if (trip?.icon) return trip.icon;
+
+  const transport = (trip?.transport || [])[0]?.toLowerCase?.() || '';
+  const transportIcons = {
+    flight: '✈️',
+    plane: '✈️',
+    train: '🚄',
+    rail: '🚆',
+    car: '🚗',
+    drive: '🚗',
+    bus: '🚌',
+    boat: '⛵️',
+    cruise: '🛳️',
+    bike: '🚲',
+    walk: '🚶',
+    hike: '🥾',
+    subway: '🚇'
+  };
+
+  return transportIcons[transport] || '📍';
+}
+
 function latLngToPosition(lat, lng) {
   const x = ((lng + 180) / 360) * 100;
   const y = ((90 - lat) / 180) * 100;
@@ -27,7 +74,10 @@ function latLngToPosition(lat, lng) {
 }
 
 function getChronologicalPoints() {
-  return [...journeys]
+  const key = buildMapCacheKey();
+  if (mapCache.points && mapCache.key === key) return mapCache.points;
+
+  mapCache.points = [...journeys]
     .map((trip) => ({
       ...trip,
       lat: Number(trip.lat),
@@ -45,31 +95,33 @@ function getChronologicalPoints() {
         date: trip.start || ''
       };
     });
+
+  mapCache.key = key;
+  return mapCache.points;
 }
 
 function clusterPoints(points) {
   const map = document.getElementById('world-map');
   const width = map?.clientWidth || 100;
-  const thresholdPercent = ((mapState.view === 'country' ? 22 : 16) / width) * 100;
-  const clusters = [];
+  const cellPercent = ((mapState.view === 'country' ? 18 : 12) / Math.max(width, 1)) * 100;
+  const grid = new Map();
 
   points.forEach((point) => {
-    const hit = clusters.find((cluster) => {
-      const dx = cluster.x - point.x;
-      const dy = cluster.y - point.y;
-      return Math.sqrt(dx * dx + dy * dy) <= thresholdPercent;
-    });
-
-    if (hit) {
-      hit.points.push(point);
-      hit.x = (hit.x * (hit.points.length - 1) + point.x) / hit.points.length;
-      hit.y = (hit.y * (hit.points.length - 1) + point.y) / hit.points.length;
-    } else {
-      clusters.push({ x: point.x, y: point.y, points: [point] });
-    }
+    const gx = Math.floor(point.x / cellPercent);
+    const gy = Math.floor(point.y / cellPercent);
+    const key = `${gx},${gy}`;
+    const bucket = grid.get(key) || { x: 0, y: 0, points: [] };
+    bucket.points.push(point);
+    bucket.x += point.x;
+    bucket.y += point.y;
+    grid.set(key, bucket);
   });
 
-  return clusters;
+  return Array.from(grid.values()).map((bucket) => ({
+    x: bucket.x / bucket.points.length,
+    y: bucket.y / bucket.points.length,
+    points: bucket.points
+  }));
 }
 
 function computeBounds(points) {
@@ -82,6 +134,29 @@ function computeBounds(points) {
     minY: Math.min(...ys),
     maxY: Math.max(...ys)
   };
+}
+
+function buildSmoothRoutePath(points) {
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
+
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p0 = points[i - 1] || points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || p2;
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+
+  return d;
 }
 
 function buildDerivedData() {
@@ -129,6 +204,10 @@ function renderMap() {
     <div class="map-controls" aria-label="地图缩放">
       <button type="button" data-zoom="in" aria-label="放大地图">＋</button>
       <button type="button" data-zoom="out" aria-label="缩小地图">－</button>
+      <button type="button" data-animate-route aria-pressed="${mapState.animateRoute}" aria-label="切换路线动画">${
+        mapState.animateRoute ? '⏸' : '▶'
+      }</button>
+      <button type="button" data-fit-bounds aria-label="适配全部足迹">⤢</button>
     </div>
     <div class="map-view-toggle" aria-label="地图视图切换">
       <button type="button" data-view="world" class="active">世界视图</button>
@@ -149,6 +228,18 @@ function renderMap() {
       setScale(mapState.scale + delta, { origin: { x: 50, y: 50 } });
     });
   });
+
+  const animateToggle = map.querySelector('button[data-animate-route]');
+  animateToggle?.addEventListener('click', () => {
+    mapState.animateRoute = !mapState.animateRoute;
+    animateToggle.setAttribute('aria-pressed', mapState.animateRoute ? 'true' : 'false');
+    animateToggle.classList.toggle('active', mapState.animateRoute);
+    animateToggle.textContent = mapState.animateRoute ? '⏸' : '▶';
+    paintMapGraphics();
+  });
+
+  const fitButton = map.querySelector('button[data-fit-bounds]');
+  fitButton?.addEventListener('click', fitMapToJourneys);
 
   bindCountryChips(map);
   bindViewToggle(map);
@@ -176,6 +267,7 @@ function paintMapGraphics() {
   routePath.setAttribute('stroke-width', '0.6');
   routePath.setAttribute('stroke-linecap', 'round');
   routePath.setAttribute('stroke-linejoin', 'round');
+  routePath.setAttribute('vector-effect', 'non-scaling-stroke');
 
   const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
   gradient.id = 'routeGradient';
@@ -201,17 +293,22 @@ function paintMapGraphics() {
   routeLayer.appendChild(defs);
 
   if (points.length > 1) {
-    const d = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const d = buildSmoothRoutePath(points);
     routePath.setAttribute('d', d);
     routeLayer.appendChild(routePath);
 
-    const totalLength = routePath.getTotalLength();
-    routePath.style.strokeDasharray = totalLength;
-    routePath.style.strokeDashoffset = totalLength;
-    routePath.style.transition = 'stroke-dashoffset 1.2s ease';
-    requestAnimationFrame(() => {
+    if (mapState.animateRoute) {
+      const totalLength = routePath.getTotalLength();
+      routePath.style.strokeDasharray = totalLength;
+      routePath.style.strokeDashoffset = totalLength;
+      routePath.style.transition = 'stroke-dashoffset 1.2s ease';
+      requestAnimationFrame(() => {
+        routePath.style.strokeDashoffset = '0';
+      });
+    } else {
+      routePath.style.strokeDasharray = 'none';
       routePath.style.strokeDashoffset = '0';
-    });
+    }
   }
 
   const fragment = document.createDocumentFragment();
@@ -239,14 +336,16 @@ function buildMarker(point, { variant }) {
   marker.style.left = `${point.x}%`;
   marker.style.top = `${point.y}%`;
   marker.dataset.id = point.id;
+  marker.dataset.variant = variant;
+  marker.title = `${point.label} · ${formatTripDate(point.trip)}`;
 
   const icon = document.createElement('span');
   icon.className = 'marker-icon';
-  icon.textContent = variant === 'start' ? '🚩' : variant === 'end' ? '🏁' : '📍';
+  icon.textContent = getMarkerIcon(point.trip, variant);
 
   const tooltip = document.createElement('div');
   tooltip.className = 'marker-tooltip';
-  tooltip.innerHTML = `<strong>${point.label}</strong><br/>${point.date} · ${point.trip?.country || ''}`;
+  tooltip.innerHTML = `<strong>${point.label}</strong><br/>${formatTripDate(point.trip)} · ${point.trip?.country || ''}`;
 
   const label = document.createElement('div');
   label.className = 'marker-label';
@@ -278,7 +377,7 @@ function buildClusterMarker(cluster) {
   tooltip.className = 'marker-tooltip';
   tooltip.innerHTML = cluster.points
     .slice(0, 5)
-    .map((p) => `<strong>${p.label}</strong> · ${p.date}`)
+    .map((p) => `<strong>${p.label}</strong> · ${formatTripDate(p.trip)}`)
     .join('<br/>');
 
   marker.appendChild(count);
@@ -616,6 +715,7 @@ function renderHeroMetrics() {
 }
 
 function renderAll() {
+  markMapDirty();
   buildDerivedData();
   renderHeroMetrics();
   renderMap();
