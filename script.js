@@ -4,25 +4,20 @@ let passportStamps = [];
 let tagFilters = ['全部'];
 let recordButtonsBound = false;
 let editingJourneyId = '';
+const CHINA_BOUNDS = { minLat: 18, maxLat: 54, minLng: 73, maxLng: 135 };
+
 let mapState = {
-  scale: 1,
+  scale: 1.8,
   panX: 0,
   panY: 0,
-  focus: { lat: 20, lng: 0 },
-  selectedCountry: '',
-  view: 'world'
+  focus: { lat: 35, lng: 103 }
 };
 
-const focusableCountries = [
-  { key: 'usa', label: '美国', lat: 39.8, lng: -98.6, zoom: 3.6 },
-  { key: 'china', label: '中国', lat: 35.8, lng: 103.8, zoom: 3.7 },
-  { key: 'japan', label: '日本', lat: 37.2, lng: 139.7, zoom: 4.3 },
-  { key: 'europe', label: '欧洲', lat: 50.1, lng: 14.4, zoom: 3.4 }
-];
-
 function latLngToPosition(lat, lng) {
-  const x = ((lng + 180) / 360) * 100;
-  const y = ((90 - lat) / 180) * 100;
+  const clampedLat = Math.min(CHINA_BOUNDS.maxLat, Math.max(CHINA_BOUNDS.minLat, lat));
+  const clampedLng = Math.min(CHINA_BOUNDS.maxLng, Math.max(CHINA_BOUNDS.minLng, lng));
+  const x = ((clampedLng - CHINA_BOUNDS.minLng) / (CHINA_BOUNDS.maxLng - CHINA_BOUNDS.minLng)) * 100;
+  const y = ((CHINA_BOUNDS.maxLat - clampedLat) / (CHINA_BOUNDS.maxLat - CHINA_BOUNDS.minLat)) * 100;
   return { x, y };
 }
 
@@ -50,7 +45,7 @@ function getChronologicalPoints() {
 function clusterPoints(points) {
   const map = document.getElementById('world-map');
   const width = map?.clientWidth || 100;
-  const thresholdPercent = ((mapState.view === 'country' ? 22 : 16) / width) * 100;
+  const thresholdPercent = (18 / width) * 100;
   const clusters = [];
 
   points.forEach((point) => {
@@ -129,15 +124,7 @@ function renderMap() {
     <div class="map-controls" aria-label="地图缩放">
       <button type="button" data-zoom="in" aria-label="放大地图">＋</button>
       <button type="button" data-zoom="out" aria-label="缩小地图">－</button>
-    </div>
-    <div class="map-view-toggle" aria-label="地图视图切换">
-      <button type="button" data-view="world" class="active">世界视图</button>
-      <button type="button" data-view="country">国家视图</button>
-    </div>
-    <div class="map-country-chips" aria-label="快捷跳转国家">
-      ${focusableCountries
-        .map((item) => `<button type="button" data-country="${item.key}">${item.label}</button>`)
-        .join('')}
+      <button type="button" data-reset="china" aria-label="重置到中国">中国视图</button>
     </div>
   `;
   paintMapGraphics();
@@ -150,8 +137,7 @@ function renderMap() {
     });
   });
 
-  bindCountryChips(map);
-  bindViewToggle(map);
+  map.querySelector('[data-reset="china"]').addEventListener('click', () => resetChinaView());
   bindWheelZoom(map);
   bindDrag(map);
   fitMapToJourneys();
@@ -318,31 +304,35 @@ function setScale(nextScale, options = {}) {
   }
 
   mapState.scale = newScale;
+  clampPan();
   updateMapTransform();
+}
+
+function clampPan() {
+  const limit = 120;
+  mapState.panX = Math.min(limit, Math.max(-limit, mapState.panX));
+  mapState.panY = Math.min(limit, Math.max(-limit, mapState.panY));
 }
 
 function focusOnPosition(lat, lng, nextScale) {
   const { x, y } = latLngToPosition(lat, lng);
+  const targetScale = Math.min(6, Math.max(1, nextScale || mapState.scale));
   mapState.focus = { lat, lng };
-  mapState.view = 'country';
-  mapState.selectedCountry = '';
-  mapState.panX = 50 - x * (nextScale || mapState.scale);
-  mapState.panY = 50 - y * (nextScale || mapState.scale);
-  setScale(nextScale || mapState.scale, { origin: { x: 50, y: 50 } });
-  updateViewButtons();
+  mapState.panX = 50 - x * targetScale;
+  mapState.panY = 50 - y * targetScale;
+  mapState.scale = targetScale;
+  clampPan();
+  updateMapTransform();
 }
 
-function resetWorldView() {
+function resetChinaView() {
   const points = getChronologicalPoints();
   if (!points.length) {
-    mapState.focus = { lat: 20, lng: 0 };
-    mapState.view = 'world';
-    mapState.selectedCountry = '';
-    mapState.panX = 0;
-    mapState.panY = 0;
-    mapState.scale = 1.2;
-    updateViewButtons();
-    updateCountryButtons();
+    mapState.focus = { lat: 35, lng: 103 };
+    mapState.panX = 6;
+    mapState.panY = -4;
+    mapState.scale = 1.8;
+    clampPan();
     updateMapTransform();
     return;
   }
@@ -356,70 +346,12 @@ function resetWorldView() {
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
 
-  mapState.focus = { lat: 20, lng: 0 };
-  mapState.view = 'world';
-  mapState.selectedCountry = '';
+  mapState.focus = { lat: 35, lng: 103 };
   mapState.panX = 50 - centerX * targetScale;
   mapState.panY = 50 - centerY * targetScale;
   mapState.scale = targetScale;
-  updateViewButtons();
-  updateCountryButtons();
+  clampPan();
   updateMapTransform();
-}
-
-function focusOnCountry(key) {
-  const country = focusableCountries.find((c) => c.key === key);
-  if (!country) return;
-  mapState.selectedCountry = key;
-  mapState.view = 'country';
-  const { x, y } = latLngToPosition(country.lat, country.lng);
-  mapState.focus = { lat: country.lat, lng: country.lng };
-  mapState.panX = 50 - x * country.zoom;
-  mapState.panY = 50 - y * country.zoom;
-  mapState.scale = country.zoom;
-  updateViewButtons();
-  updateCountryButtons();
-  updateMapTransform();
-}
-
-function bindCountryChips(map) {
-  const chips = map.querySelectorAll('[data-country]');
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      focusOnCountry(chip.dataset.country);
-    });
-  });
-}
-
-function bindViewToggle(map) {
-  const viewButtons = map.querySelectorAll('[data-view]');
-  viewButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.view === 'world') {
-        resetWorldView();
-      } else if (btn.dataset.view === 'country' && mapState.selectedCountry) {
-        focusOnCountry(mapState.selectedCountry);
-      }
-    });
-  });
-  updateViewButtons();
-}
-
-function updateViewButtons() {
-  document.querySelectorAll('.map-view-toggle button').forEach((btn) => {
-    const active = btn.dataset.view === mapState.view;
-    btn.classList.toggle('active', active);
-    if (btn.dataset.view === 'country') {
-      btn.disabled = !mapState.selectedCountry;
-      btn.textContent = mapState.selectedCountry ? '返回国家视图' : '国家视图';
-    }
-  });
-}
-
-function updateCountryButtons() {
-  document.querySelectorAll('.map-country-chips button').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.country === mapState.selectedCountry);
-  });
 }
 
 function bindWheelZoom(map) {
@@ -457,6 +389,7 @@ function bindDrag(map) {
     mapState.panY += dy;
     startX = event.clientX;
     startY = event.clientY;
+    clampPan();
     updateMapTransform();
   });
 
@@ -476,10 +409,10 @@ function bindDrag(map) {
 
 function fitMapToJourneys() {
   const points = getChronologicalPoints();
-  if (!points.length) return resetWorldView();
+  if (!points.length) return resetChinaView();
 
   const bounds = computeBounds(points);
-  if (!bounds) return resetWorldView();
+  if (!bounds) return resetChinaView();
 
   const padding = 1.4;
   const width = Math.max(bounds.maxX - bounds.minX, 4) * (1 + padding);
@@ -489,15 +422,12 @@ function fitMapToJourneys() {
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
 
-  mapState.view = 'world';
-  mapState.selectedCountry = '';
-  mapState.focus = { lat: 20, lng: 0 };
+  mapState.focus = { lat: 35, lng: 103 };
   mapState.scale = targetScale;
   mapState.panX = 50 - centerX * targetScale;
   mapState.panY = 50 - centerY * targetScale;
 
-  updateViewButtons();
-  updateCountryButtons();
+  clampPan();
   updateMapTransform();
 }
 

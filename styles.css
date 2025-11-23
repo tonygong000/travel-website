@@ -291,6 +291,8 @@ main {
   inset: 0;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.08)),
     url('https://upload.wikimedia.org/wikipedia/commons/6/6e/World_map_blank_without_borders.svg') center/cover;
+  background-size: 240% 220%;
+  background-position: 78% 52%;
   transform-origin: top left;
   transition: transform 0.25s ease, background-position 0.25s ease;
   cursor: grab;
@@ -325,82 +327,16 @@ main {
   backdrop-filter: blur(6px);
 }
 
-.map-view-toggle {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  display: flex;
-  gap: 8px;
-  background: rgba(12, 17, 22, 0.75);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 10px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(6px);
-}
-
-.map-view-toggle button {
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: #fff;
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.map-view-toggle button.active {
-  background: linear-gradient(135deg, var(--accent-2), var(--accent));
-  border-color: var(--accent-2);
-  color: #0c1116;
-  font-weight: 700;
-}
-
-.map-country-chips {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  background: rgba(12, 17, 22, 0.75);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 10px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(6px);
-}
-
-.map-country-chips button {
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.map-country-chips button.active,
-.map-country-chips button:hover {
-  background: linear-gradient(135deg, var(--accent-2), var(--accent));
-  border-color: var(--accent-2);
-  color: #0c1116;
-  font-weight: 700;
-}
 
 .map-controls button {
-  width: 32px;
+  min-width: 32px;
   height: 32px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
   color: #fff;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   transition: all 0.2s ease;
 }
 
