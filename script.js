@@ -26,6 +26,64 @@ function latLngToPosition(lat, lng) {
   return { x, y };
 }
 
+function getChronologicalPoints() {
+  return [...journeys]
+    .map((trip) => ({
+      ...trip,
+      lat: Number(trip.lat),
+      lng: Number(trip.lng)
+    }))
+    .filter((trip) => Number.isFinite(trip.lat) && Number.isFinite(trip.lng))
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+    .map((trip, index) => {
+      const pos = latLngToPosition(trip.lat, trip.lng);
+      return {
+        ...pos,
+        id: trip.id || `trip-${index}`,
+        trip,
+        label: trip.city || trip.location || '未命名地点',
+        date: trip.start || ''
+      };
+    });
+}
+
+function clusterPoints(points) {
+  const map = document.getElementById('world-map');
+  const width = map?.clientWidth || 100;
+  const thresholdPercent = ((mapState.view === 'country' ? 22 : 16) / width) * 100;
+  const clusters = [];
+
+  points.forEach((point) => {
+    const hit = clusters.find((cluster) => {
+      const dx = cluster.x - point.x;
+      const dy = cluster.y - point.y;
+      return Math.sqrt(dx * dx + dy * dy) <= thresholdPercent;
+    });
+
+    if (hit) {
+      hit.points.push(point);
+      hit.x = (hit.x * (hit.points.length - 1) + point.x) / hit.points.length;
+      hit.y = (hit.y * (hit.points.length - 1) + point.y) / hit.points.length;
+    } else {
+      clusters.push({ x: point.x, y: point.y, points: [point] });
+    }
+  });
+
+  return clusters;
+}
+
+function computeBounds(points) {
+  if (!points.length) return null;
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys)
+  };
+}
+
 function buildDerivedData() {
   passportStamps = journeys.map((trip) => ({
     title: `${trip.city?.toUpperCase?.() || '未知'} · ${trip.year || ''}`,
@@ -64,7 +122,10 @@ function buildDerivedData() {
 function renderMap() {
   const map = document.getElementById('world-map');
   map.innerHTML = `
-    <div class="map-inner"></div>
+    <div class="map-inner">
+      <svg class="route-layer" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-label="旅程路线"></svg>
+      <div class="marker-layer" aria-label="旅程标记"></div>
+    </div>
     <div class="map-controls" aria-label="地图缩放">
       <button type="button" data-zoom="in" aria-label="放大地图">＋</button>
       <button type="button" data-zoom="out" aria-label="缩小地图">－</button>
@@ -79,29 +140,7 @@ function renderMap() {
         .join('')}
     </div>
   `;
-  const mapInner = map.querySelector('.map-inner');
-  journeys.forEach((trip) => {
-    const marker = document.createElement('div');
-    marker.className = 'marker';
-    const { x, y } = latLngToPosition(trip.lat, trip.lng);
-    marker.style.left = `${x}%`;
-    marker.style.top = `${y}%`;
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'marker-tooltip';
-    tooltip.innerHTML = `<strong>${trip.city}</strong><br/>${trip.country} · ${trip.start} → ${trip.end}`;
-
-    const label = document.createElement('div');
-    label.className = 'marker-label';
-    label.textContent = trip.city;
-
-    marker.appendChild(tooltip);
-    marker.appendChild(label);
-    marker.addEventListener('click', () => {
-      focusOnPosition(trip.lat, trip.lng, Math.min(5, mapState.scale + 0.9));
-    });
-    mapInner.appendChild(marker);
-  });
+  paintMapGraphics();
 
   const zoomButtons = map.querySelectorAll('button[data-zoom]');
   zoomButtons.forEach((btn) => {
@@ -115,8 +154,143 @@ function renderMap() {
   bindViewToggle(map);
   bindWheelZoom(map);
   bindDrag(map);
+  fitMapToJourneys();
+}
 
-  resetWorldView();
+function paintMapGraphics() {
+  const map = document.getElementById('world-map');
+  const mapInner = map?.querySelector('.map-inner');
+  const markerLayer = mapInner?.querySelector('.marker-layer');
+  const routeLayer = mapInner?.querySelector('.route-layer');
+  if (!mapInner || !markerLayer || !routeLayer) return;
+
+  markerLayer.innerHTML = '';
+  routeLayer.innerHTML = '';
+
+  const points = getChronologicalPoints();
+  if (!points.length) return;
+
+  const routePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  routePath.setAttribute('fill', 'none');
+  routePath.setAttribute('stroke', 'url(#routeGradient)');
+  routePath.setAttribute('stroke-width', '0.6');
+  routePath.setAttribute('stroke-linecap', 'round');
+  routePath.setAttribute('stroke-linejoin', 'round');
+
+  const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  gradient.id = 'routeGradient';
+  gradient.setAttribute('x1', '0%');
+  gradient.setAttribute('y1', '0%');
+  gradient.setAttribute('x2', '100%');
+  gradient.setAttribute('y2', '0%');
+
+  const stops = [
+    { offset: '0%', color: 'var(--accent)' },
+    { offset: '50%', color: 'var(--accent-2)' },
+    { offset: '100%', color: '#73ffea' }
+  ];
+  stops.forEach(({ offset, color }) => {
+    const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop.setAttribute('offset', offset);
+    stop.setAttribute('stop-color', color);
+    gradient.appendChild(stop);
+  });
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.appendChild(gradient);
+  routeLayer.appendChild(defs);
+
+  if (points.length > 1) {
+    const d = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    routePath.setAttribute('d', d);
+    routeLayer.appendChild(routePath);
+
+    const totalLength = routePath.getTotalLength();
+    routePath.style.strokeDasharray = totalLength;
+    routePath.style.strokeDashoffset = totalLength;
+    routePath.style.transition = 'stroke-dashoffset 1.2s ease';
+    requestAnimationFrame(() => {
+      routePath.style.strokeDashoffset = '0';
+    });
+  }
+
+  const fragment = document.createDocumentFragment();
+  const clusters = clusterPoints(points);
+  const startId = points[0].id;
+  const endId = points[points.length - 1]?.id;
+
+  clusters.forEach((cluster) => {
+    if (cluster.points.length === 1) {
+      const point = cluster.points[0];
+      const variant = point.id === startId ? 'start' : point.id === endId ? 'end' : 'single';
+      fragment.appendChild(buildMarker(point, { variant }));
+    } else {
+      fragment.appendChild(buildClusterMarker(cluster));
+    }
+  });
+
+  markerLayer.appendChild(fragment);
+}
+
+function buildMarker(point, { variant }) {
+  const marker = document.createElement('button');
+  marker.className = `marker ${variant === 'single' ? 'is-single' : ''}`;
+  marker.type = 'button';
+  marker.style.left = `${point.x}%`;
+  marker.style.top = `${point.y}%`;
+  marker.dataset.id = point.id;
+
+  const icon = document.createElement('span');
+  icon.className = 'marker-icon';
+  icon.textContent = variant === 'start' ? '🚩' : variant === 'end' ? '🏁' : '📍';
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'marker-tooltip';
+  tooltip.innerHTML = `<strong>${point.label}</strong><br/>${point.date} · ${point.trip?.country || ''}`;
+
+  const label = document.createElement('div');
+  label.className = 'marker-label';
+  label.textContent = point.label;
+
+  marker.appendChild(icon);
+  marker.appendChild(tooltip);
+  marker.appendChild(label);
+
+  marker.addEventListener('click', () => {
+    focusOnPosition(point.trip.lat, point.trip.lng, Math.min(5, mapState.scale + 0.9));
+  });
+
+  return marker;
+}
+
+function buildClusterMarker(cluster) {
+  const marker = document.createElement('button');
+  marker.className = 'marker cluster-marker';
+  marker.type = 'button';
+  marker.style.left = `${cluster.x}%`;
+  marker.style.top = `${cluster.y}%`;
+
+  const count = document.createElement('div');
+  count.className = 'cluster-count';
+  count.textContent = cluster.points.length;
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'marker-tooltip';
+  tooltip.innerHTML = cluster.points
+    .slice(0, 5)
+    .map((p) => `<strong>${p.label}</strong> · ${p.date}`)
+    .join('<br/>');
+
+  marker.appendChild(count);
+  marker.appendChild(tooltip);
+
+  marker.addEventListener('click', () => {
+    const avgLat = cluster.points.reduce((sum, p) => sum + p.trip.lat, 0) / cluster.points.length;
+    const avgLng = cluster.points.reduce((sum, p) => sum + p.trip.lng, 0) / cluster.points.length;
+    focusOnPosition(avgLat, avgLng, Math.min(6, mapState.scale + 1));
+  });
+
+  return marker;
 }
 
 function setScale(nextScale, options = {}) {
@@ -159,20 +333,34 @@ function focusOnPosition(lat, lng, nextScale) {
 }
 
 function resetWorldView() {
-  const centerLat = journeys.length
-    ? journeys.reduce((sum, trip) => sum + trip.lat, 0) / journeys.length
-    : mapState.focus.lat;
-  const centerLng = journeys.length
-    ? journeys.reduce((sum, trip) => sum + trip.lng, 0) / journeys.length
-    : mapState.focus.lng;
+  const points = getChronologicalPoints();
+  if (!points.length) {
+    mapState.focus = { lat: 20, lng: 0 };
+    mapState.view = 'world';
+    mapState.selectedCountry = '';
+    mapState.panX = 0;
+    mapState.panY = 0;
+    mapState.scale = 1.2;
+    updateViewButtons();
+    updateCountryButtons();
+    updateMapTransform();
+    return;
+  }
 
-  const targetScale = journeys.length > 1 ? 1.6 : 1.2;
-  const { x, y } = latLngToPosition(centerLat, centerLng);
-  mapState.focus = { lat: centerLat, lng: centerLng };
+  const bounds = computeBounds(points);
+  if (!bounds) return;
+  const padding = 1.2;
+  const width = Math.max(bounds.maxX - bounds.minX, 4) * (1 + padding);
+  const height = Math.max(bounds.maxY - bounds.minY, 2) * (1 + padding);
+  const targetScale = Math.min(6, Math.max(1, Math.min(100 / width, 100 / height)));
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+
+  mapState.focus = { lat: 20, lng: 0 };
   mapState.view = 'world';
   mapState.selectedCountry = '';
-  mapState.panX = 50 - x * targetScale;
-  mapState.panY = 50 - y * targetScale;
+  mapState.panX = 50 - centerX * targetScale;
+  mapState.panY = 50 - centerY * targetScale;
   mapState.scale = targetScale;
   updateViewButtons();
   updateCountryButtons();
@@ -284,6 +472,33 @@ function bindDrag(map) {
     isDragging = false;
     map.querySelector('.map-inner').style.cursor = 'grab';
   });
+}
+
+function fitMapToJourneys() {
+  const points = getChronologicalPoints();
+  if (!points.length) return resetWorldView();
+
+  const bounds = computeBounds(points);
+  if (!bounds) return resetWorldView();
+
+  const padding = 1.4;
+  const width = Math.max(bounds.maxX - bounds.minX, 4) * (1 + padding);
+  const height = Math.max(bounds.maxY - bounds.minY, 2) * (1 + padding);
+  const targetScale = Math.min(6, Math.max(1, Math.min(100 / width, 100 / height)));
+
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+
+  mapState.view = 'world';
+  mapState.selectedCountry = '';
+  mapState.focus = { lat: 20, lng: 0 };
+  mapState.scale = targetScale;
+  mapState.panX = 50 - centerX * targetScale;
+  mapState.panY = 50 - centerY * targetScale;
+
+  updateViewButtons();
+  updateCountryButtons();
+  updateMapTransform();
 }
 
 function updateMapTransform() {
