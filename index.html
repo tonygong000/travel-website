@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅迹护照 | Where & When</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">旅迹护照</div>
+    <nav class="nav">
+      <a href="#where-when">时空坐标</a>
+      <a href="#memories">记忆载体</a>
+      <a href="#stats">成就</a>
+      <a href="#tags">标签</a>
+    </nav>
+    <button class="primary-btn" data-action="record">立即记录</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">The Where & When</p>
+        <h1>用一张地图与时间轴，收藏世界的温度</h1>
+        <p class="lede">用经纬度标记每一次心跳，用时间线串起旅途的故事。为每段旅程准备一枚护照印章，点亮属于你的世界热力图。</p>
+        <div class="hero-actions">
+          <button class="primary-btn" data-action="record">开始创建旅程</button>
+          <button class="ghost-btn">查看年度回顾</button>
+        </div>
+        <div class="hero-meta">
+          <div>
+            <strong id="hero-countries">0</strong>
+            <span>已去国家</span>
+          </div>
+          <div>
+            <strong id="hero-distance">0 km</strong>
+            <span>累计里程</span>
+          </div>
+          <div>
+            <strong id="hero-rating">0 ★</strong>
+            <span>平均推荐指数</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-image">
+          <div class="image-overlay">秋季 · 巴黎 · 2023</div>
+        </div>
+        <div class="hero-card">
+          <p class="eyebrow">年度热力图</p>
+          <div class="heat-legend">
+            <span>停留越久色越深</span>
+            <div class="legend-blocks">
+              <span class="heat-level level-1"></span>
+              <span class="heat-level level-2"></span>
+              <span class="heat-level level-3"></span>
+              <span class="heat-level level-4"></span>
+            </div>
+          </div>
+          <div id="mini-heatmap" class="mini-heatmap" aria-label="年度热力图示例"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="where-when" class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Where & When</p>
+          <h2>时空坐标：地图 + 时间轴</h2>
+          <p class="panel-lede">宏观到微观的地理层级，搭配出发-结束日期，帮你在世界与时间中找到每一次停留。</p>
+        </div>
+        <button class="ghost-btn">导入 EXIF</button>
+      </div>
+      <div class="map-timeline">
+        <div class="map-card">
+          <div class="map-labels">
+            <span>国家 / 区域</span>
+            <span>城市 / 省份</span>
+            <span>POI</span>
+          </div>
+          <div id="world-map" class="world-map" aria-label="旅行地图"></div>
+        </div>
+        <div class="timeline" id="timeline" aria-label="旅行时间轴"></div>
+      </div>
+    </section>
+
+    <section id="memories" class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Memories</p>
+          <h2>记忆载体：多媒体与叙事</h2>
+          <p class="panel-lede">封面图、图集、高光时刻与长篇故事，让每个坐标都带上温度。支持自动提取 EXIF 时间和 GPS，解放你的输入负担。</p>
+        </div>
+        <button class="ghost-btn">上传封面</button>
+      </div>
+      <div class="memories-grid">
+        <div class="gallery" id="gallery"></div>
+        <div class="highlights" id="highlights"></div>
+      </div>
+      <div class="story-block" id="stories"></div>
+    </section>
+
+    <section id="stats" class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Gamification</p>
+          <h2>数据统计与成就系统</h2>
+          <p class="panel-lede">用足迹统计、探索深度和交通方式，让旅行更像一场「游戏」——数据越完整，徽章越闪耀。</p>
+        </div>
+        <button class="ghost-btn">生成成就墙</button>
+      </div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="achievement-row" id="achievements"></div>
+    </section>
+
+    <section id="tags" class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Tags & Vibe</p>
+          <h2>情感与分类标签</h2>
+          <p class="panel-lede">同伴、旅行风格、主观评分，帮你快速筛选与回溯同一类旅程。支持「是否二刷」和推荐指数。</p>
+        </div>
+        <button class="ghost-btn">新增标签</button>
+      </div>
+      <div class="tag-chips" id="tag-filters"></div>
+      <div class="tag-cards" id="tag-cards"></div>
+    </section>
+
+    <section class="panel special">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Creative</p>
+          <h2>创意功能：护照印章、此时彼刻、年度热力图</h2>
+          <p class="panel-lede">让旅程更酷的小设计：护照印章墙、同地对比的「此时彼刻」、以及 GitHub 风格的年度停留热力图。</p>
+        </div>
+      </div>
+      <div class="special-grid">
+        <div class="passport" id="passport"></div>
+        <div class="then-now" id="then-now"></div>
+        <div class="heatmap-card">
+          <div class="heatmap-header">
+            <div>
+              <p class="eyebrow">年度热力图</p>
+              <h3>停留浓度</h3>
+              <p class="small">颜色越深代表停留越久或多次打卡。</p>
+            </div>
+            <div class="legend-blocks compact">
+              <span class="heat-level level-1"></span>
+              <span class="heat-level level-2"></span>
+              <span class="heat-level level-3"></span>
+              <span class="heat-level level-4"></span>
+            </div>
+          </div>
+          <div id="heatmap" class="heatmap" aria-label="年度停留热力图"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>旅迹护照 · 用设计与数据收藏你的世界</p>
+    <div class="footer-actions">
+      <button class="ghost-btn">导出 CSV</button>
+      <button class="primary-btn" data-action="record">开始记录</button>
+    </div>
+  </footer>
+
+  <section class="modal" id="journey-modal" aria-hidden="true">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow" id="modal-eyebrow">新旅程</p>
+          <h3 id="modal-title">填写旅程数据表</h3>
+          <p class="small">填写必要信息，点击完成后即刻写入数据库并刷新页面数据。</p>
+        </div>
+        <button class="ghost-btn" id="close-modal" aria-label="关闭">关闭</button>
+      </header>
+      <form id="journey-form" class="form-grid">
+        <label class="journey-field">标题*<input name="title" required placeholder="如：巴黎秋日 Citywalk" /></label>
+        <label class="journey-field">唯一 ID*<input name="id" required placeholder="例如 paris2025" /></label>
+        <label class="journey-field">国家*<input name="country" required placeholder="法国" /></label>
+        <label class="journey-field">洲*<input name="continent" required placeholder="欧洲" /></label>
+        <label class="journey-field">城市*<input name="city" required placeholder="巴黎" /></label>
+        <label class="journey-field">详细位置*<input name="location" required placeholder="巴黎, 法国" /></label>
+        <label class="journey-field">纬度*<input name="lat" required type="number" step="0.0001" placeholder="48.8566" /></label>
+        <label class="journey-field">经度*<input name="lng" required type="number" step="0.0001" placeholder="2.3522" /></label>
+        <label class="journey-field">开始日期*<input name="start" required type="date" /></label>
+        <label class="journey-field">结束日期*<input name="end" required type="date" /></label>
+        <label class="journey-field">季节<input name="season" placeholder="秋季" /></label>
+        <label class="journey-field">年份<input name="year" type="number" placeholder="2024" /></label>
+        <label class="journey-field">封面图<input name="heroImage" placeholder="https://..." /></label>
+        <label class="journey-field">POI（逗号分隔）<input name="poi" placeholder="埃菲尔铁塔, 卢浮宫" /></label>
+        <label class="journey-field">图集（逗号分隔 URL）<textarea name="gallery" rows="2" placeholder="多张图片用逗号分隔"></textarea></label>
+        <label class="journey-field">高光时刻（逗号分隔）<textarea name="highlights" rows="2" placeholder="最难忘的三件事"></textarea></label>
+        <label class="journey-field">同伴标签（逗号分隔）<input name="companions" placeholder="情侣, 朋友" /></label>
+        <label class="journey-field">主题标签（逗号分隔）<input name="theme" placeholder="Citywalk, 美食" /></label>
+        <label class="journey-field">交通方式（逗号分隔）<input name="transport" placeholder="飞机, 自驾" /></label>
+        <label class="journey-field">推荐指数（1-5）<input name="rating" type="number" min="1" max="5" placeholder="5" /></label>
+        <label class="journey-field">是否二刷<select name="revisit"><option value="false">否</option><option value="true">是</option></select></label>
+        <label class="journey-field">累计里程 (km)<input name="distance" type="number" min="0" placeholder="1000" /></label>
+        <label class="story-field">游记内容<textarea name="mood" rows="3" placeholder="这一刻的感受或长篇故事"></textarea></label>
+        <div class="form-actions">
+          <button type="button" class="ghost-btn" id="cancel-modal">取消</button>
+          <button type="submit" class="primary-btn" id="modal-submit">完成填写并写入</button>
+        </div>
+        <p class="small" id="form-feedback" role="alert"></p>
+      </form>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
